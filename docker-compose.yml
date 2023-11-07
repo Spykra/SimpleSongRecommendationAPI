@@ -7,7 +7,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:password@spirosdb:5432/thedb
+      DATABASE_URL: ${DATABASE_URL}
     volumes:
       - /home/spiros/repos/the:/app
 

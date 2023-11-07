@@ -13,7 +13,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
-class User(UserBase):
+class UserResponse(UserBase):
     id: int
 
 # The Config class ensures that the schemas can be used with ORM objects (like those from SQLAlchemy).
