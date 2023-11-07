@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 # The BaseModel from Pydantic is used for data validation and serialization/deserialization.
 # For each model, we generally have three schema classes:
@@ -14,8 +14,9 @@ class DataSourceCreate(DataSourceBase):
     pass
 
 class DataSourceResponse(DataSourceBase):
-    id: int
-
+    source_type: Optional[str]
+    source_data: Optional[str]
+    id: Optional[int]
 # The Config class ensures that the schemas can be used with ORM objects (like those from SQLAlchemy).
     class Config:
         orm_mode = True
