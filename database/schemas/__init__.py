@@ -1,2 +1,2 @@
-from .data_source import DataSourceResponse
-from .users import UserCreate, UserResponse
+from .sentiment_analysis_schema import SentimentAnalysisResponse
+from .deeper_sentiment_analysis_schema import DeepSentimentAnalysisResponse

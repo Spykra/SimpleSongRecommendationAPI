@@ -6,8 +6,8 @@ services:
     command: uvicorn main:app --host 0.0.0.0 --reload
     ports:
       - "8000:8000"
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
+    env_file:
+      - .env
     volumes:
       - /home/spiros/repos/the:/app
 
