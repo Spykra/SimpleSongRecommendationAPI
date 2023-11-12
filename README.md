@@ -43,7 +43,9 @@ This command will start the application and make it accessible at http://localho
 Open a web browser and navigate to http://localhost:8000/docs. This should display the Swagger UI with the API documentation, indicating that the API is running correctly.
 
 
-Stopping the Application
+## Stopping the Application
+
 To stop the application, you can press CTRL+C in the terminal where docker-compose is running. To remove the containers created by docker-compose, run:
 
-docker-compose down
+    docker-compose down
+    

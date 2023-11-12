@@ -1,14 +1,21 @@
 from fastapi import FastAPI, APIRouter, UploadFile, Depends, File, HTTPException
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 import logging
 
 from database import connection, crud
-from database.schemas import DataSourceResponse
+from database.schemas import SentimentAnalysisResponse
+from database.crud.deeper_sentiment_analysis_crud import create_deep_sentiment_analysis
+from database.crud.sentiment_analysis_crud import create_sentiment_analysis
+from database.schemas.deeper_sentiment_analysis_schema import DeepSentimentAnalysisResponse
+from processes.deeper_sentiment_processing import analyze_deep_sentiment
 from processes.audio_processing import sound_to_text
+from processes.sentiment_processing import analyze_sentiment
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 app = FastAPI()
 router = APIRouter()
@@ -21,45 +28,53 @@ async def get_db():
     finally:
         await db.close()
 
-@router.post("/upload_sound", response_model=DataSourceResponse)
-async def upload_sound(file: UploadFile = File(...), db: AsyncSession = Depends(get_db)):
+
+@router.post("/sentiment_analysis", response_model=SentimentAnalysisResponse)
+async def sentiment_analysis(file: UploadFile = File(...), db: AsyncSession = Depends(get_db)):
     sound_data = await file.read()
-    logger.info("Processing sound for transcription generation")
+
     # Process the sound bytes and generate a transcription
+    logger.info("Processing sound for transcription generation...")
     transcription = await sound_to_text(sound_data)
-    logger.info(f"Transcription generated: {transcription}")
-    # Store the transcription in the database
-    return await crud.create_data_source(db=db, source_type="audio", source_data=transcription)
 
-@router.get("/get_sound/{sound_id}", response_model=DataSourceResponse)
-async def get_sound(sound_id: int, db: AsyncSession = Depends(get_db)):
-    result = await crud.get_data_source(db, sound_id)
-    if not result:
-        raise HTTPException(status_code=404, detail="Sound not found")
-    return result
+    # Perform sentiment analysis
+    logger.info("Processing sentiment analysis...")
+    sentiment_scores = await analyze_sentiment(transcription)
 
-@router.put("/update_sound/{sound_id}", response_model=DataSourceResponse)
-async def update_sound(sound_id: int, file: UploadFile = File(...), db: AsyncSession = Depends(get_db)):
+    # Create the DeepSentiment record in the database
+    sentiment_data = await create_sentiment_analysis(db, transcription, sentiment_scores)
+
+    # Construct and return the response
+    response_data = {
+        "id": sentiment_data.id,
+        "text": sentiment_data.text,
+        "sentiment_scores": sentiment_scores
+    }
+    return SentimentAnalysisResponse(**response_data)
+
+
+@router.post("/deeper_sentiment_analysis", response_model=DeepSentimentAnalysisResponse)
+async def deeper_sentiment_analysis(file: UploadFile = File(...), db: AsyncSession = Depends(get_db)):
     sound_data = await file.read()
-    logger.info("Processing sound for transcription update")
-    new_transcription = await sound_to_text(sound_data)
-    return await crud.update_data_source(db, sound_id, new_transcription)
 
-@router.delete("/delete_sound/{sound_id}", response_model=DataSourceResponse)
-async def delete_sound(sound_id: int, db: AsyncSession = Depends(get_db)):
-    return await crud.delete_data_source(db, sound_id)
+    # Process the sound bytes and generate a transcription
+    logger.info("Processing sound for transcription generation...")
+    transcription = await sound_to_text(sound_data)
 
-@router.get("/list_sounds", response_model=List[DataSourceResponse])
-async def list_sounds(skip: int = 0, limit: int = 10, db: AsyncSession = Depends(get_db)):
-    return await crud.list_data_sources(db, skip=skip, limit=limit)
+    # Perform deeper sentiment analysis
+    logger.info("Processing deeper sentiment analysis...")
+    deep_sentiment_scores = await analyze_deep_sentiment(transcription)
 
-@router.get("/search_sounds", response_model=List[DataSourceResponse])
-async def search_sounds(query: str, db: AsyncSession = Depends(get_db)):
-    return await crud.search_data_sources(db, query)
+    # Create the DeepSentiment record in the database
+    deep_sentiment_data = await create_deep_sentiment_analysis(db, transcription, deep_sentiment_scores)
 
-@router.get("/health", response_model=str)
-async def health_check():
-    return "Healthy"
+    # Construct and return the response
+    response_data = {
+        "id": deep_sentiment_data.id,
+        "text": deep_sentiment_data.text,
+        "deep_sentiment_scores": deep_sentiment_scores
+    }
+    return DeepSentimentAnalysisResponse(**response_data)
 
 # Include the router with all the endpoints
 app.include_router(router)
