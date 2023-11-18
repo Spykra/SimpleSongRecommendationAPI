@@ -34,10 +34,10 @@ class DeepSentimentScores(BaseModel):
 
 
 class DeepSentimentAnalysisBase(BaseModel):
-    text: str
+    text_id: int
 
 class DeepSentimentAnalysisCreate(DeepSentimentAnalysisBase):
-    pass
+    deep_sentiment_scores: DeepSentimentScores
 
 class DeepSentimentAnalysisResponse(DeepSentimentAnalysisBase):
     id: Optional[int]
