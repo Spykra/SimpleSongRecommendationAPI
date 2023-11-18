@@ -1,21 +1,18 @@
-from fastapi import FastAPI, APIRouter, UploadFile, Depends, File, HTTPException
-from fastapi.responses import JSONResponse
+# main.py or equivalent file where you define your FastAPI endpoints
+from fastapi import FastAPI, APIRouter, UploadFile, Depends, File
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
 import logging
 
-from database import connection, crud
-from database.schemas import SentimentAnalysisResponse
+from database import connection
+from database.crud.output_text_crud import create_text_record
 from database.crud.deeper_sentiment_analysis_crud import create_deep_sentiment_analysis
-from database.crud.sentiment_analysis_crud import create_sentiment_analysis
-from database.schemas.deeper_sentiment_analysis_schema import DeepSentimentAnalysisResponse
+from database.schemas.deeper_sentiment_analysis_schema import DeepSentimentAnalysisCreate, DeepSentimentScores
+from processes.audio_transformation_processing import sound_to_text
 from processes.deeper_sentiment_processing import analyze_deep_sentiment
-from processes.audio_processing import sound_to_text
-from processes.sentiment_processing import analyze_sentiment
+from processes.output_generation import generate_text
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 
 app = FastAPI()
 router = APIRouter()
@@ -28,53 +25,51 @@ async def get_db():
     finally:
         await db.close()
 
-
-@router.post("/sentiment_analysis", response_model=SentimentAnalysisResponse)
-async def sentiment_analysis(file: UploadFile = File(...), db: AsyncSession = Depends(get_db)):
-    sound_data = await file.read()
-
-    # Process the sound bytes and generate a transcription
-    logger.info("Processing sound for transcription generation...")
-    transcription = await sound_to_text(sound_data)
-
-    # Perform sentiment analysis
-    logger.info("Processing sentiment analysis...")
-    sentiment_scores = await analyze_sentiment(transcription)
-
-    # Create the DeepSentiment record in the database
-    sentiment_data = await create_sentiment_analysis(db, transcription, sentiment_scores)
-
-    # Construct and return the response
-    response_data = {
-        "id": sentiment_data.id,
-        "text": sentiment_data.text,
-        "sentiment_scores": sentiment_scores
-    }
-    return SentimentAnalysisResponse(**response_data)
-
-
-@router.post("/deeper_sentiment_analysis", response_model=DeepSentimentAnalysisResponse)
+@router.post("/deeper_sentiment_analysis")
 async def deeper_sentiment_analysis(file: UploadFile = File(...), db: AsyncSession = Depends(get_db)):
     sound_data = await file.read()
 
-    # Process the sound bytes and generate a transcription
-    logger.info("Processing sound for transcription generation...")
+    logger.info("Converting sound to text...")
     transcription = await sound_to_text(sound_data)
+    if not transcription:
+        logger.error("Failed to transcribe sound data.")
+        return {"error": "Failed to transcribe sound data."}
+    logger.info("Transcription successful.")
 
-    # Perform deeper sentiment analysis
-    logger.info("Processing deeper sentiment analysis...")
-    deep_sentiment_scores = await analyze_deep_sentiment(transcription)
+    logger.info("Performing deep sentiment analysis...")
+    sentiment_scores = await analyze_deep_sentiment(transcription)
+    if not sentiment_scores:
+        logger.error("Failed to perform deep sentiment analysis.")
+        return {"error": "Failed to perform deep sentiment analysis."}
+    logger.info("Deep sentiment analysis completed.")
 
-    # Create the DeepSentiment record in the database
-    deep_sentiment_data = await create_deep_sentiment_analysis(db, transcription, deep_sentiment_scores)
+    # Extracting top two emotions for the prompt
+    logger.info("Extracting top two emotions from sentiment analysis...")
+    top_emotions = sorted(sentiment_scores.dict().items(), key=lambda x: x[1], reverse=True)[:2]
+    emotion_descriptions = [f"{emotion.replace('_', ' ').capitalize()} ({score:.2%})" for emotion, score in top_emotions]
+    logger.info(f"Top two emotions identified: {emotion_descriptions}")
 
-    # Construct and return the response
-    response_data = {
-        "id": deep_sentiment_data.id,
-        "text": deep_sentiment_data.text,
-        "deep_sentiment_scores": deep_sentiment_scores
+    # Generating new text based on the top emotions
+    logger.info("Generating new text based on the top emotions...")
+    emotion_text = ' and '.join(emotion_descriptions)
+    sentiment_prompt = f"Based on the emotions of {emotion_text}, here are some song recommendations that encapsulate these feelings:"
+    generated_texts = await generate_text(sentiment_prompt)
+    if not generated_texts:
+        logger.error("Failed to generate new text.")
+        return {"error": "Failed to generate new text."}
+
+    text_record = await create_text_record(db, original_text=transcription, generated_text=generated_texts[0])
+
+    sentiment_analysis_data = DeepSentimentAnalysisCreate(
+        text_id=text_record.id,
+        deep_sentiment_scores=DeepSentimentScores(**sentiment_scores.dict())
+    )
+
+    sentiment_record = await create_deep_sentiment_analysis(db, sentiment_analysis_data)
+    logger.info(generated_texts[0])
+
+    return {
+        "transcription": transcription,
+        "sentiment_analysis": sentiment_scores.dict(),
+        "generated_text": generated_texts[0]
     }
-    return DeepSentimentAnalysisResponse(**response_data)
-
-# Include the router with all the endpoints
-app.include_router(router)
