@@ -42,6 +42,8 @@ Follow these instructions to get a copy of the project up and running on your ma
     docker-compose build
     ```
 
+    Be patient, it will take 1-2 minutes to build the image.
+
 2. **Start the Services:**
 
     Now, let's start up the application and the database:
@@ -49,6 +51,9 @@ Follow these instructions to get a copy of the project up and running on your ma
     ```bash
     docker-compose up
     ```
+
+    Now I need you to be brave and gather all your patience, or even better grab something to eat.
+    We will be downloading all the models needed, so this will take some time (approx 15 minutes). Don't worry, this is only a one time thing; since you don't have to build your image again, you can stop and start the api as many times as you want without delay.
 
     Once running, the application will be accessible at [http://localhost:8000](http://localhost:8000).
 
@@ -65,18 +70,3 @@ To stop the application:
     ```bash
     docker-compose down
     ```
-
-## What's Next?
-
-- **Explore the API:** Use the Swagger UI to try out different API endpoints.
-- **Read the Docs:** For more details on FastAPI and Docker, check out the [FastAPI Documentation](https://fastapi.tiangolo.com/) and [Docker Documentation](https://docs.docker.com/).
-
-## Contributing
-
-Interested in contributing? That's great! Please refer to our contributing guidelines for details on how to make a difference.
-
-## Need Help?
-
-If you run into any issues or have questions, don't hesitate to reach out or create an issue in the repository.
-
-Happy coding!
