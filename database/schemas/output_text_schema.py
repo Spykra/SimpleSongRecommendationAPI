@@ -9,6 +9,11 @@ class TextGenerationBase(BaseModel):
 class TextGenerationCreate(TextGenerationBase):
     pass
 
+class TextGenerationUpdate(BaseModel):
+    original_text: Optional[str] = None
+    generated_text: Optional[str] = None
+
+
 class TextGenerationResponse(TextGenerationBase):
     id: Optional[int]
 

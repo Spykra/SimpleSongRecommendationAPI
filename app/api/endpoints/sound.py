@@ -1,11 +1,11 @@
-# main.py or equivalent file where you define your FastAPI endpoints
 from fastapi import FastAPI, APIRouter, UploadFile, Depends, File
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 
 from database import connection
-from database.crud.output_text_crud import create_text_record
-from database.crud.deeper_sentiment_analysis_crud import create_deep_sentiment_analysis
+from database.crud.output_text_crud import create_text_record, read_text_record, delete_text_record_by_id
+from database.crud.deeper_sentiment_analysis_crud import create_deep_sentiment_analysis, read_deep_sentiment_analysis
+from database.crud.deeper_sentiment_analysis_crud import delete_deep_sentiment_analysis_by_id
 from database.schemas.deeper_sentiment_analysis_schema import DeepSentimentAnalysisCreate, DeepSentimentScores
 from processes.audio_transformation_processing import sound_to_text
 from processes.deeper_sentiment_processing import analyze_deep_sentiment
@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 router = APIRouter()
 
-# Dependency to get the database session
 async def get_db():
     db = connection.SessionLocal()
     try:
@@ -73,3 +72,23 @@ async def deeper_sentiment_analysis(file: UploadFile = File(...), db: AsyncSessi
         "sentiment_analysis": sentiment_scores.dict(),
         "generated_text": generated_texts[0]
     }
+
+
+@router.get("/text_record/{text_id}")
+async def get_text_record(text_id: int, db: AsyncSession = Depends(get_db)):
+    return await read_text_record(db, text_id)
+
+
+@router.get("/deep_sentiment/{sentiment_id}")
+async def get_deep_sentiment_record(sentiment_id: int, db: AsyncSession = Depends(get_db)):
+    return await read_deep_sentiment_analysis(db, sentiment_id)
+
+
+@router.delete("/text_record/{text_id}")
+async def delete_text_record(text_id: int, db: AsyncSession = Depends(get_db)):
+    return await delete_text_record_by_id(db, text_id)
+
+
+@router.delete("/deep_sentiment/{sentiment_id}")
+async def delete_deep_sentiment_record(sentiment_id: int, db: AsyncSession = Depends(get_db)):
+    return await delete_deep_sentiment_analysis_by_id(db, sentiment_id)

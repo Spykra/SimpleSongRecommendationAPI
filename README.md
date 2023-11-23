@@ -61,6 +61,28 @@ Follow these instructions to get a copy of the project up and running on your ma
 
     Confirm that the API is working by visiting [http://localhost:8000/docs](http://localhost:8000/docs) in your browser. You should see the Swagger UI with the API documentation.
 
+### Step 4: Database Migrations
+
+To manage database migrations:
+
+1. **Create Migrations:**
+
+    Generate a new migration file based on model changes:
+
+    ```bash
+    invoke create-migrations
+    ```
+
+2. **Run Migrations:**
+
+    Apply the latest migrations to your database:
+
+    ```bash
+    invoke run-migrations
+    ```
+
+    Ensure your Docker containers are running before executing these commands.
+
 ## Stopping the Application
 
 To stop the application:

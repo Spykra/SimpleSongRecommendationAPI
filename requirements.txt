@@ -1,5 +1,7 @@
+invoke
 fastapi
 uvicorn
+pytest
 sqlalchemy
 asyncpg
 python-dotenv
