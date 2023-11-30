@@ -1,6 +1,6 @@
-# FastAPI Audio Analysis Application
+# SimpleSongRecommendationAPI
 
-Welcome to the FastAPI Audio Analysis Application! This application is designed to process audio files, perform sentiment analysis, and generate text outputs. It's built with FastAPI and uses a PostgreSQL database for data management.
+Welcome to the SimpleSongRecommendationAPI! This application is designed to process audio files, extract the text from the sound, perform sentiment analysis, and generate text outputs. It's built with FastAPI and uses a PostgreSQL database for data management.
 
 ## Prerequisites
 
@@ -42,7 +42,7 @@ Follow these instructions to get a copy of the project up and running on your ma
     docker-compose build
     ```
 
-    Be patient, it will take 1-2 minutes to build the image.
+    Be patient, it will take 2-3 minutes to build the image.
 
 2. **Start the Services:**
 
@@ -53,7 +53,7 @@ Follow these instructions to get a copy of the project up and running on your ma
     ```
 
     Now I need you to be brave and gather all your patience, or even better grab something to eat.
-    We will be downloading all the models needed, so this will take some time (approx 15 minutes). Don't worry, this is only a one time thing; since you don't have to build your image again, you can stop and start the api as many times as you want without delay.
+    We will be downloading all the models needed, so this will take some time (approx 15 minutes) and some memory (approx 10 GB).
 
     Once running, the application will be accessible at [http://localhost:8000](http://localhost:8000).
 
@@ -82,6 +82,10 @@ To manage database migrations:
     ```
 
     Ensure your Docker containers are running before executing these commands.
+
+## SQL Admin Dashboard
+
+The application includes an SQL Admin dashboard, accessible through the FastAPI app. It is accessible at [http://localhost:8000/admin](http://localhost:8000/admin).
 
 ## Stopping the Application
 
